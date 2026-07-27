@@ -1,0 +1,290 @@
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════════════
+   THEME VARIABLES
+   ═══════════════════════════════════════════════════════════════ */
+
+:root,
+html.dark {
+  --bg-base:        #0f172a;
+  --bg-surface:     #1e293b;
+  --bg-elevated:    #334155;
+  --bg-input:       #1e293b;
+  --border:         #334155;
+  --border-focus:   #34d399;
+  --text-primary:   #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted:     #64748b;
+  --accent:         #10b981;
+  --accent-hover:   #34d399;
+  --accent-subtle:  rgba(16,185,129,0.12);
+  --danger:         #f87171;
+  --shadow:         0 4px 32px rgba(0,0,0,0.4);
+  --navbar-bg:      rgba(15,23,42,0.95);
+  --card-hover:     rgba(52,211,153,0.06);
+  --footer-bg:      #020617;
+}
+
+html.light {
+  --bg-base:        #f8fafc;
+  --bg-surface:     #ffffff;
+  --bg-elevated:    #f1f5f9;
+  --bg-input:       #f1f5f9;
+  --border:         #e2e8f0;
+  --border-focus:   #10b981;
+  --text-primary:   #0f172a;
+  --text-secondary: #475569;
+  --text-muted:     #94a3b8;
+  --accent:         #059669;
+  --accent-hover:   #10b981;
+  --accent-subtle:  rgba(5,150,105,0.10);
+  --danger:         #ef4444;
+  --shadow:         0 4px 24px rgba(0,0,0,0.10);
+  --navbar-bg:      rgba(248,250,252,0.95);
+  --card-hover:     rgba(5,150,105,0.04);
+  --footer-bg:      #1e293b;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BASE
+   ═══════════════════════════════════════════════════════════════ */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   THEME-AWARE UTILITIES
+   ═══════════════════════════════════════════════════════════════ */
+
+.t-bg-base      { background-color: var(--bg-base); }
+.t-bg-surface   { background-color: var(--bg-surface); }
+.t-bg-elevated  { background-color: var(--bg-elevated); }
+.t-border       { border-color: var(--border); }
+.t-text         { color: var(--text-primary); }
+.t-text-muted   { color: var(--text-secondary); }
+.t-accent       { color: var(--accent); }
+
+.t-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  transition: background-color 0.3s, border-color 0.3s, box-shadow 0.2s;
+}
+
+.t-input {
+  background-color: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.t-input:focus { border-color: var(--border-focus); }
+.t-input::placeholder { color: var(--text-muted); }
+
+.t-select {
+  background-color: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  border-radius: 0.75rem;
+  padding: 0.65rem 1rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.t-select:focus { border-color: var(--border-focus); }
+
+.t-btn-primary {
+  background-color: var(--accent);
+  color: #0f172a;
+  font-weight: 700;
+  border-radius: 0.75rem;
+  padding: 0.72rem 1.5rem;
+  transition: background-color 0.2s, transform 0.15s;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+.t-btn-primary:hover:not(:disabled) {
+  background-color: var(--accent-hover);
+  transform: scale(1.02);
+}
+.t-btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.t-btn-ghost {
+  background-color: var(--bg-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  font-weight: 500;
+  border-radius: 0.75rem;
+  padding: 0.65rem 1.25rem;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.t-btn-ghost:hover { border-color: var(--border-focus); }
+
+/* ═══════════════════════════════════════════════════════════════
+   NAVBAR
+   ═══════════════════════════════════════════════════════════════ */
+
+.t-navbar {
+  background-color: var(--navbar-bg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+  transition: background-color 0.3s, border-color 0.3s;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   THEME TOGGLE PILL
+   ═══════════════════════════════════════════════════════════════ */
+
+.theme-toggle {
+  width: 46px;
+  height: 25px;
+  border-radius: 99px;
+  background: var(--bg-elevated);
+  border: 1.5px solid var(--border);
+  cursor: pointer;
+  position: relative;
+  transition: background 0.3s, border-color 0.3s;
+  display: flex;
+  align-items: center;
+  padding: 2px 3px;
+  flex-shrink: 0;
+}
+.theme-toggle:hover { border-color: var(--border-focus); }
+
+.theme-toggle-thumb {
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: var(--accent);
+  transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+}
+html.light .theme-toggle-thumb { transform: translateX(21px); }
+html.dark  .theme-toggle-thumb { transform: translateX(0); }
+
+/* ═══════════════════════════════════════════════════════════════
+   SLOT BUTTONS
+   ═══════════════════════════════════════════════════════════════ */
+
+.slot-btn {
+  border: 1.5px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border-radius: 0.65rem;
+  padding: 0.55rem 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.16s;
+  text-align: center;
+  line-height: 1.3;
+}
+.slot-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-subtle);
+  color: var(--accent);
+}
+.slot-btn.booked {
+  opacity: 0.38;
+  cursor: not-allowed;
+  text-decoration: line-through;
+  background: var(--bg-elevated);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   COURT CARDS
+   ═══════════════════════════════════════════════════════════════ */
+
+.court-card {
+  border: 1.5px solid var(--border);
+  background: var(--bg-surface);
+  border-radius: 1rem;
+  padding: 1rem 1.1rem;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.court-card:hover { border-color: var(--accent); }
+.court-card.active {
+  border-color: var(--accent);
+  background: var(--accent-subtle);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FUTSAL HERO OVERLAY
+   ═══════════════════════════════════════════════════════════════ */
+
+.futsal-hero-overlay {
+  background: linear-gradient(
+    to bottom,
+    rgba(0,0,0,0.20) 0%,
+    rgba(0,0,0,0.62) 65%,
+    var(--bg-base) 100%
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ANIMATIONS
+   ═══════════════════════════════════════════════════════════════ */
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-14px); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+
+.animate-float       { animation: float 4s ease-in-out infinite; }
+.animate-float-slow  { animation: float 6s ease-in-out infinite; }
+.animate-float-delay { animation: float 5s ease-in-out 1s infinite; }
+.animate-fadeUp      { animation: fadeUp 0.45s ease both; }
+
+.skeleton {
+  background: linear-gradient(90deg,
+    var(--bg-surface) 25%,
+    var(--bg-elevated) 50%,
+    var(--bg-surface) 75%);
+  background-size: 400px 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: 0.5rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SCROLLBAR
+   ═══════════════════════════════════════════════════════════════ */
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--bg-base); }
+::-webkit-scrollbar-thumb { background: var(--bg-elevated); border-radius: 3px; }
+
+/* ═══════════════════════════════════════════════════════════════
+   DATE INPUT COLOUR FIX (light mode)
+   ═══════════════════════════════════════════════════════════════ */
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: var(--date-icon-filter, none);
+}
+html.light input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.4);
+}
