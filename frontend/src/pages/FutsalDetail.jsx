@@ -80,6 +80,8 @@ const FUTSAL_DETAILS = {
   },
 };
 
+const API_ORIGIN = "http://localhost:5000";
+
 const FUTSAL_PRESETS = [
   {
     keywords: ["kathmandu", "ktm", "thamel", "newroad", "new road"],
@@ -155,10 +157,19 @@ const FUTSAL_PRESETS = [
 
 function getFutsalDetail(futsal) {
   const nameLower = (futsal.futsal_name + " " + (futsal.address || "")).toLowerCase();
+  const withUploadedImage = (detail) => ({
+    ...detail,
+    images: futsal.image_url
+      ? [`${API_ORIGIN}${futsal.image_url}`, ...detail.images]
+      : detail.images,
+  });
+
   for (const preset of FUTSAL_PRESETS) {
-    if (preset.keywords.some((kw) => nameLower.includes(kw))) return preset;
+    if (preset.keywords.some((kw) => nameLower.includes(kw))) {
+      return withUploadedImage(preset);
+    }
   }
-  return FUTSAL_DETAILS.default;
+  return withUploadedImage(FUTSAL_DETAILS.default);
 }
 
 // ── Star rating ───────────────────────────────────────────────────────────────

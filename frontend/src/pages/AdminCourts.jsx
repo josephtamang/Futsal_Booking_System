@@ -11,6 +11,11 @@ function AdminCourts() {
     court_type: "",
     price_per_hour: "",
   });
+  const [imageFile, setImageFile] = useState(null);
+  const [imageUploading, setImageUploading] = useState(false);
+  const selectedFutsal = futsals.find(
+    (f) => String(f.futsal_id) === String(form.futsal_id)
+  );
 
   /* =========================
      LOAD FUTSALS
@@ -74,6 +79,49 @@ function AdminCourts() {
       .catch(() => alert("Failed to enable court"));
   };
 
+  const refreshFutsals = () => {
+    API.get("/futsals")
+      .then((res) => setFutsals(res.data))
+      .catch(() => alert("Failed to load futsals"));
+  };
+
+  const uploadFutsalImage = () => {
+    if (!form.futsal_id || !imageFile) {
+      return alert("Choose a futsal and image first");
+    }
+
+    const data = new FormData();
+    data.append("image", imageFile);
+
+    setImageUploading(true);
+    API.put(`/admin/futsals/${form.futsal_id}/image`, data, {
+      headers: { "Content-Type": "multipart/form-data" },
+    })
+      .then((res) => {
+        alert(res.data.message);
+        setImageFile(null);
+        refreshFutsals();
+      })
+      .catch((err) =>
+        alert(err.response?.data?.message || "Failed to upload image")
+      )
+      .finally(() => setImageUploading(false));
+  };
+
+  const deleteFutsalImage = () => {
+    if (!form.futsal_id) return alert("Choose a futsal first");
+    if (!window.confirm("Delete this futsal image from the website?")) return;
+
+    API.delete(`/admin/futsals/${form.futsal_id}/image`)
+      .then((res) => {
+        alert(res.data.message);
+        refreshFutsals();
+      })
+      .catch((err) =>
+        alert(err.response?.data?.message || "Failed to delete image")
+      );
+  };
+
   return (
     <div className="pt-28 px-6 t-bg-base min-h-screen t-text">
       <div className="max-w-6xl mx-auto">
@@ -98,48 +146,6 @@ function AdminCourts() {
               </option>
             ))}
           </select>
-        </div>
-
-        {/* Add Court */}
-        <div className="t-card rounded-2xl p-6 mb-10">
-          <h2 className="text-xl font-semibold mb-4">Add New Court</h2>
-
-          <div className="grid md:grid-cols-3 gap-4">
-            <input
-              placeholder="Court Name"
-              value={form.court_name}
-              className="bg-slate-900 border t-border p-3 rounded-xl"
-              onChange={(e) =>
-                setForm({ ...form, court_name: e.target.value })
-              }
-            />
-
-            <input
-              placeholder="Court Type (5A / 7A)"
-              value={form.court_type}
-              className="bg-slate-900 border t-border p-3 rounded-xl"
-              onChange={(e) =>
-                setForm({ ...form, court_type: e.target.value })
-              }
-            />
-
-            <input
-              type="number"
-              placeholder="Price per hour"
-              value={form.price_per_hour}
-              className="bg-slate-900 border t-border p-3 rounded-xl"
-              onChange={(e) =>
-                setForm({ ...form, price_per_hour: e.target.value })
-              }
-            />
-          </div>
-
-          <button
-            onClick={addCourt}
-            className="mt-5 bg-emerald-500 text-slate-900 px-6 py-3 rounded-xl font-semibold hover:bg-emerald-400 transition"
-          >
-            Add Court
-          </button>
         </div>
 
         {/* Courts List */}
@@ -201,6 +207,100 @@ function AdminCourts() {
             ))}
           </div>
         )}
+
+        {form.futsal_id && (
+          <div className="t-card rounded-2xl p-6 mt-10">
+            <h2 className="text-xl font-semibold mb-4">Manage Futsal Image</h2>
+
+            <div className="grid md:grid-cols-[220px_1fr] gap-5 items-start">
+              <div className="rounded-xl overflow-hidden bg-slate-900 border t-border aspect-video">
+                {selectedFutsal?.image_url ? (
+                  <img
+                    src={`http://localhost:5000${selectedFutsal.image_url}`}
+                    alt={selectedFutsal.futsal_name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center t-text-muted text-sm">
+                    No image
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <p className="t-text-muted text-sm mb-3">
+                  Upload an image to show this futsal on the Explore and Detail pages.
+                </p>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                  className="block w-full bg-slate-900 border t-border p-3 rounded-xl"
+                />
+                <div className="flex flex-wrap gap-3 mt-4">
+                  <button
+                    onClick={uploadFutsalImage}
+                    disabled={imageUploading}
+                    className="bg-emerald-500 text-slate-900 px-6 py-3 rounded-xl font-semibold hover:bg-emerald-400 disabled:opacity-60 transition"
+                  >
+                    {imageUploading ? "Uploading..." : "Upload Image"}
+                  </button>
+
+                  {selectedFutsal?.image_url && (
+                    <button
+                      onClick={deleteFutsalImage}
+                      className="bg-red-500/20 text-red-400 px-6 py-3 rounded-xl font-semibold hover:bg-red-500/30 transition"
+                    >
+                      Delete Image
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Add Court */}
+        <div className="t-card rounded-2xl p-6 mt-10 mb-10">
+          <h2 className="text-xl font-semibold mb-4">Add New Court</h2>
+
+          <div className="grid md:grid-cols-3 gap-4">
+            <input
+              placeholder="Court Name"
+              value={form.court_name}
+              className="bg-slate-900 border t-border p-3 rounded-xl"
+              onChange={(e) =>
+                setForm({ ...form, court_name: e.target.value })
+              }
+            />
+
+            <input
+              placeholder="Court Type (5A / 7A)"
+              value={form.court_type}
+              className="bg-slate-900 border t-border p-3 rounded-xl"
+              onChange={(e) =>
+                setForm({ ...form, court_type: e.target.value })
+              }
+            />
+
+            <input
+              type="number"
+              placeholder="Price per hour"
+              value={form.price_per_hour}
+              className="bg-slate-900 border t-border p-3 rounded-xl"
+              onChange={(e) =>
+                setForm({ ...form, price_per_hour: e.target.value })
+              }
+            />
+          </div>
+
+          <button
+            onClick={addCourt}
+            className="mt-5 bg-emerald-500 text-slate-900 px-6 py-3 rounded-xl font-semibold hover:bg-emerald-400 transition"
+          >
+            Add Court
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -1,8 +1,43 @@
 const express = require("express");
 const router = express.Router();
+const fs = require("fs");
+const path = require("path");
+const multer = require("multer");
 const db = require("../db");
 const auth = require("../middleware/authMiddleware");
 const admin = require("../middleware/adminMiddleware");
+
+const uploadDir = path.join(__dirname, "..", "uploads", "futsals");
+fs.mkdirSync(uploadDir, { recursive: true });
+
+const storage = multer.diskStorage({
+  destination: uploadDir,
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, `futsal-${req.params.futsal_id}-${Date.now()}${ext}`);
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (!file.mimetype.startsWith("image/")) {
+      return cb(new Error("Only image files are allowed"));
+    }
+    cb(null, true);
+  },
+});
+
+function deleteLocalImage(imageUrl) {
+  if (!imageUrl || !imageUrl.startsWith("/uploads/futsals/")) return;
+
+  const relativePath = imageUrl.replace(/^\/uploads\//, "uploads/");
+  const filePath = path.join(__dirname, "..", relativePath);
+  fs.unlink(filePath, (err) => {
+    if (err && err.code !== "ENOENT") console.error(err);
+  });
+}
 
 // Add futsal
 router.post("/futsals", auth, admin, (req, res) => {
@@ -123,6 +158,85 @@ router.post("/slots", auth, admin, (req, res) => {
     }
     res.json({ message: "Time slot added successfully" });
   });
+});
+
+// Upload or replace futsal image
+router.put(
+  "/futsals/:futsal_id/image",
+  auth,
+  admin,
+  upload.single("image"),
+  (req, res) => {
+    const { futsal_id } = req.params;
+
+    if (!req.file) {
+      return res.status(400).json({ message: "Image file is required" });
+    }
+
+    const imageUrl = `/uploads/futsals/${req.file.filename}`;
+
+    db.query(
+      "SELECT image_url FROM futsals WHERE futsal_id = ?",
+      [futsal_id],
+      (selectErr, rows) => {
+        if (selectErr) {
+          deleteLocalImage(imageUrl);
+          return res.status(500).json({ message: "Failed to load futsal" });
+        }
+
+        if (rows.length === 0) {
+          deleteLocalImage(imageUrl);
+          return res.status(404).json({ message: "Futsal not found" });
+        }
+
+        db.query(
+          "UPDATE futsals SET image_url = ? WHERE futsal_id = ?",
+          [imageUrl, futsal_id],
+          (updateErr) => {
+            if (updateErr) {
+              deleteLocalImage(imageUrl);
+              return res.status(500).json({ message: "Failed to update image" });
+            }
+
+            deleteLocalImage(rows[0].image_url);
+            res.json({ message: "Futsal image updated successfully", image_url: imageUrl });
+          }
+        );
+      }
+    );
+  }
+);
+
+// Delete futsal image
+router.delete("/futsals/:futsal_id/image", auth, admin, (req, res) => {
+  const { futsal_id } = req.params;
+
+  db.query(
+    "SELECT image_url FROM futsals WHERE futsal_id = ?",
+    [futsal_id],
+    (selectErr, rows) => {
+      if (selectErr) {
+        return res.status(500).json({ message: "Failed to load futsal" });
+      }
+
+      if (rows.length === 0) {
+        return res.status(404).json({ message: "Futsal not found" });
+      }
+
+      db.query(
+        "UPDATE futsals SET image_url = NULL WHERE futsal_id = ?",
+        [futsal_id],
+        (updateErr) => {
+          if (updateErr) {
+            return res.status(500).json({ message: "Failed to delete image" });
+          }
+
+          deleteLocalImage(rows[0].image_url);
+          res.json({ message: "Futsal image deleted successfully" });
+        }
+      );
+    }
+  );
 });
 
 

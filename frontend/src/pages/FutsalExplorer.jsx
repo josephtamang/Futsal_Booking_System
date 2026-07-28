@@ -13,6 +13,8 @@ const THUMB_IDS = [
   "1543326727-cf6c39e8f84c",
 ];
 
+const API_ORIGIN = "http://localhost:5000";
+
 function FutsalExplorer() {
   const [futsals, setFutsals] = useState([]);
   const [search, setSearch]   = useState("");
@@ -99,7 +101,11 @@ function FutsalExplorer() {
                 {/* Thumbnail */}
                 <div className="relative h-40 overflow-hidden rounded-t-2xl">
                   <img
-                    src={`https://images.unsplash.com/photo-${THUMB_IDS[i % THUMB_IDS.length]}?w=600&q=70`}
+                    src={
+                      f.image_url
+                        ? `${API_ORIGIN}${f.image_url}`
+                        : `https://images.unsplash.com/photo-${THUMB_IDS[i % THUMB_IDS.length]}?w=600&q=70`
+                    }
                     alt={f.futsal_name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
