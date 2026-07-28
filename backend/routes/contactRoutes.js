@@ -1,6 +1,26 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../db");
+const auth = require("../middleware/authMiddleware");
+const admin = require("../middleware/adminMiddleware");
+
+// Admin: view submitted contact messages
+router.get("/", auth, admin, (req, res) => {
+  const sql = `
+    SELECT id, name, email, message, created_at
+    FROM contact_messages
+    ORDER BY created_at DESC
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ message: "Failed to load messages" });
+    }
+
+    res.json(results);
+  });
+});
 
 // Submit contact form
 router.post("/", (req, res) => {

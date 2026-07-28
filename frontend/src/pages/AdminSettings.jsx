@@ -16,6 +16,7 @@ import {
   Ban,
   Pencil,
   Trash2,
+  Mail,
 } from "lucide-react";
 
 // ─── tiny helpers ──────────────────────────────────────────────────────────
@@ -64,6 +65,11 @@ function AdminSettings() {
   const [userLoading, setUserLoading] = useState(false);
   const [userMsg, setUserMsg] = useState({ text: "", ok: true });
 
+  // â”€â”€ Messages â”€â”€
+  const [messages, setMessages] = useState([]);
+  const [messageLoading, setMessageLoading] = useState(false);
+  const [messageMsg, setMessageMsg] = useState({ text: "", ok: true });
+
   // ── Futsals ──
   const [futsals, setFutsals] = useState([]);
   const [editFutsal, setEditFutsal] = useState(null); // futsal being edited
@@ -80,6 +86,7 @@ function AdminSettings() {
   useEffect(() => {
     if (activeTab === "reports") loadStats();
     if (activeTab === "users") loadUsers();
+    if (activeTab === "messages") loadMessages();
     if (activeTab === "futsals") loadFutsals();
   }, [activeTab]);
 
@@ -132,6 +139,19 @@ function AdminSettings() {
       email.toLowerCase().includes(search)
     );
   });
+
+  // â”€â”€ MESSAGES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  const loadMessages = () => {
+    setMessageLoading(true);
+    setMessageMsg({ text: "", ok: true });
+
+    API.get("/contact")
+      .then((res) => setMessages(res.data))
+      .catch(() =>
+        setMessageMsg({ text: "Failed to load contact messages", ok: false })
+      )
+      .finally(() => setMessageLoading(false));
+  };
 
   // ── FUTSALS ─────────────────────────────────────────────────────────────
   const loadFutsals = () => {
@@ -203,6 +223,7 @@ function AdminSettings() {
   const tabs = [
     { key: "reports", label: "Reports", icon: BarChart3 },
     { key: "users",   label: "Manage Users", icon: Users },
+    { key: "messages", label: "Messages", icon: Mail },
     { key: "futsals", label: "Manage Futsals", icon: Building2 },
   ];
 
@@ -430,6 +451,49 @@ function AdminSettings() {
         )}
 
         {/* ── FUTSALS TAB ─────────────────────────────────────────────────── */}
+        {activeTab === "messages" && (
+          <div>
+            {messageMsg.text && (
+              <p className={`mb-4 text-sm font-medium inline-flex items-center gap-1.5 ${messageMsg.ok ? "text-emerald-400" : "text-red-400"}`}>
+                {messageMsg.ok ? <CheckCircle2 size={16} /> : <XCircle size={16} />} {messageMsg.text}
+              </p>
+            )}
+
+            {messageLoading ? (
+              <p className="t-text-muted animate-pulse">Loading messagesâ€¦</p>
+            ) : messages.length === 0 ? (
+              <div className="t-card rounded-2xl p-8 text-center">
+                <Mail size={32} className="mx-auto mb-3 t-text-muted" />
+                <p className="t-text-muted">No contact messages yet.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {messages.map((m) => (
+                  <div key={m.id} className="t-card rounded-2xl p-5">
+                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-3">
+                      <div>
+                        <h3 className="font-semibold text-lg">{m.name || "Unnamed User"}</h3>
+                        <a
+                          href={`mailto:${m.email}`}
+                          className="text-sm text-emerald-400 hover:underline"
+                        >
+                          {m.email || "No email"}
+                        </a>
+                      </div>
+                      <span className="text-xs t-text-muted">
+                        {fmt(m.created_at)}
+                      </span>
+                    </div>
+                    <p className="t-text-muted leading-relaxed whitespace-pre-wrap">
+                      {m.message}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {activeTab === "futsals" && (
           <div>
             {futsalMsg.text && (
