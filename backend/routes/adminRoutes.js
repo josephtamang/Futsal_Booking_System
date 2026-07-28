@@ -49,9 +49,9 @@ router.post("/futsals", auth, admin, (req, res) => {
     VALUES (?, ?, ?, ?, ?, ?)
   `;
 
-  db.query(sql, [futsal_name, address, latitude, longitude, opening_time, closing_time], (err) => {
+  db.query(sql, [futsal_name, address, latitude, longitude, opening_time, closing_time], (err, result) => {
     if (err) return res.status(500).json({ message: "Failed to add futsal" });
-    res.json({ message: "Futsal added successfully" });
+    res.json({ message: "Futsal added successfully", futsal_id: result.insertId });
   });
 });
 
