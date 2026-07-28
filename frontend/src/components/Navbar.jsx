@@ -57,10 +57,10 @@ function Navbar() {
         <div className="hidden md:flex items-center gap-5 text-sm font-medium t-text">
           <Link to="/" className={linkCls}>Home</Link>
           <Link to="/about" className={linkCls}>About</Link>
-          <Link to="/contact" className={linkCls}>Contact</Link>
 
           {!token ? (
             <>
+              <Link to="/contact" className={linkCls}>Contact</Link>
               <Link to="/login" className={linkCls}>Login</Link>
               <Link to="/register"
                 className="px-4 py-1.5 rounded-lg font-semibold transition"
@@ -80,6 +80,7 @@ function Navbar() {
             </>
           ) : (
             <>
+              <Link to="/contact" className={linkCls}>Contact</Link>
               <Link to="/recommendations" className={`${linkCls} inline-flex items-center gap-1`}><Bot size={14} />AI Pick</Link>
               <Link to="/explore" className={linkCls}>Book Futsal</Link>
               <Link to="/my-bookings" className={linkCls}>My Bookings</Link>
@@ -97,10 +98,10 @@ function Navbar() {
         <div className="md:hidden mt-3 pb-3 flex flex-col gap-3 text-sm font-medium t-text border-t t-border pt-3">
           <Link onClick={close} to="/" className={linkCls}>Home</Link>
           <Link onClick={close} to="/about" className={linkCls}>About</Link>
-          <Link onClick={close} to="/contact" className={linkCls}>Contact</Link>
 
           {!token ? (
             <>
+              <Link onClick={close} to="/contact" className={linkCls}>Contact</Link>
               <Link onClick={close} to="/login" className={linkCls}>Login</Link>
               <Link onClick={close} to="/register" className={linkCls}>Register</Link>
             </>
@@ -114,6 +115,7 @@ function Navbar() {
             </>
           ) : (
             <>
+              <Link onClick={close} to="/contact" className={linkCls}>Contact</Link>
               <Link onClick={close} to="/recommendations" className={`${linkCls} inline-flex items-center gap-1`}><Bot size={14} />AI Pick</Link>
               <Link onClick={close} to="/explore" className={linkCls}>Book Futsal</Link>
               <Link onClick={close} to="/my-bookings" className={linkCls}>My Bookings</Link>

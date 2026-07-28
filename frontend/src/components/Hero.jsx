@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { useAuth } from "../context/AuthContext";
 
 import hero1 from "../assets/hero1.jpg";
 import hero2 from "../assets/hero2.png";
@@ -8,8 +9,18 @@ import hero3 from "../assets/hero3.jpg";
 
 const images = [hero1, hero2, hero3];
 
+function getRole(token) {
+  try {
+    return JSON.parse(atob(token.split(".")[1])).role || "user";
+  } catch {
+    return "user";
+  }
+}
+
 function Hero() {
   const [index, setIndex] = useState(0);
+  const { token } = useAuth();
+  const isAdmin = token && getRole(token) === "admin";
 
   // Auto slide every 5 seconds
   useEffect(() => {
@@ -61,21 +72,23 @@ function Hero() {
           </p>
 
           {/* CTA Buttons */}
-          <div className="mt-10 flex flex-wrap gap-4">
-            <Link
-              to="/login"
-              className="px-8 py-3 rounded-full bg-emerald-500 text-slate-900 font-semibold hover:bg-emerald-400 transition shadow-lg"
-            >
-              Get Started
-            </Link>
+          {!isAdmin && (
+            <div className="mt-10 flex flex-wrap gap-4">
+              <Link
+                to="/login"
+                className="px-8 py-3 rounded-full bg-emerald-500 text-slate-900 font-semibold hover:bg-emerald-400 transition shadow-lg"
+              >
+                Get Started
+              </Link>
 
-            <Link
-              to="/about"
-              className="px-8 py-3 rounded-full border border-slate-400 text-slate-100 hover:border-emerald-400 hover:text-emerald-400 transition"
-            >
-              Learn More
-            </Link>
-          </div>
+              <Link
+                to="/about"
+                className="px-8 py-3 rounded-full border border-slate-400 text-slate-100 hover:border-emerald-400 hover:text-emerald-400 transition"
+              >
+                Learn More
+              </Link>
+            </div>
+          )}
         </motion.div>
       </div>
 
