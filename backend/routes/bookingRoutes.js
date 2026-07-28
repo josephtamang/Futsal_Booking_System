@@ -7,6 +7,15 @@ const auth = require("../middleware/authMiddleware");
 router.post("/", auth, (req, res) => {
   const { court_id, slot_id, booking_date } = req.body;
   const user_id = req.user.user_id;
+  const today = new Date().toLocaleDateString("en-CA", {
+    timeZone: "Asia/Kathmandu",
+  });
+
+  if (!booking_date || booking_date < today) {
+    return res
+      .status(400)
+      .json({ message: "Please select today or a future date" });
+  }
 
   // Check if slot already booked for that date
   const checkSql = `

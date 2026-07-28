@@ -197,6 +197,14 @@ function fmtTime(t) {
   return `${hr % 12 || 12}:${m} ${hr >= 12 ? "PM" : "AM"}`;
 }
 
+function getLocalDate() {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 function FutsalDetail() {
   const { futsal_id } = useParams();
@@ -207,7 +215,7 @@ function FutsalDetail() {
   const [slots, setSlots]             = useState([]);
   const [bookedSlots, setBookedSlots] = useState([]);
   const [selectedCourt, setSelCourt]  = useState(null);
-  const [selectedDate, setSelDate]    = useState(new Date().toISOString().split("T")[0]);
+  const [selectedDate, setSelDate]    = useState(getLocalDate);
   const [heroImg, setHeroImg]         = useState(0);
   const [booking, setBooking]         = useState(false);
   const [bookMsg, setBookMsg]         = useState({ text: "", ok: true });
@@ -248,7 +256,19 @@ function FutsalDetail() {
       .then((res) => setBookedSlots(res.data));
   }, [selectedDate]);
 
+  useEffect(() => {
+    const today = getLocalDate();
+    if (selectedDate < today) {
+      setSelDate(today);
+    }
+  }, [selectedDate]);
+
   const bookSlot = async (slot) => {
+    if (selectedDate < getLocalDate()) {
+      setBookMsg({ text: "Please select today or a future date", ok: false });
+      return;
+    }
+
     setBooking(true);
     try {
       const res = await API.post("/bookings", {
@@ -276,7 +296,7 @@ function FutsalDetail() {
     );
   }
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = getLocalDate();
 
   return (
     <div className="t-bg-base min-h-screen t-text">
@@ -410,7 +430,7 @@ function FutsalDetail() {
                 type="date"
                 value={selectedDate}
                 min={today}
-                onChange={(e) => setSelDate(e.target.value)}
+                onChange={(e) => setSelDate(e.target.value < today ? today : e.target.value)}
                 className="t-input text-sm"
               />
             </div>
