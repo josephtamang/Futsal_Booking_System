@@ -31,6 +31,7 @@ function AdminFutsals() {
     closing_time: "",
   });
   const [imageFiles, setImageFiles] = useState({});
+  const [uploadingImage, setUploadingImage] = useState({});
   const [addOpen, setAddOpen] = useState(false);
   const [adding, setAdding] = useState(false);
   const [newFutsal, setNewFutsal] = useState({
@@ -93,13 +94,12 @@ function AdminFutsals() {
       .catch((err) => alert(err.response?.data?.message || "Delete failed"));
   };
 
-  const uploadImage = (futsalId) => {
-    const file = imageFiles[futsalId];
-    if (!file) return alert("Choose an image first");
-
+  const uploadImage = (futsalId, file) => {
+    if (!file) return;
     const data = new FormData();
     data.append("image", file);
 
+    setUploadingImage((prev) => ({ ...prev, [futsalId]: true }));
     API.put(`/admin/futsals/${futsalId}/image`, data, {
       headers: { "Content-Type": "multipart/form-data" },
     })
@@ -108,7 +108,10 @@ function AdminFutsals() {
         setImageFiles((prev) => ({ ...prev, [futsalId]: null }));
         loadFutsals();
       })
-      .catch((err) => alert(err.response?.data?.message || "Upload failed"));
+      .catch((err) => alert(err.response?.data?.message || "Upload failed"))
+      .finally(() =>
+        setUploadingImage((prev) => ({ ...prev, [futsalId]: false }))
+      );
   };
 
   const uploadImageFile = (futsalId, file) => {
@@ -238,7 +241,7 @@ function AdminFutsals() {
             <div className="mt-4">
               <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-slate-700 px-4 py-3 text-sm font-semibold hover:bg-slate-600 transition">
                 <ImagePlus size={16} />
-                Choose image from laptop
+                Choose Image
                 <input
                   type="file"
                   accept="image/*"
@@ -396,30 +399,28 @@ function AdminFutsals() {
                           <label className="text-xs t-text-muted mb-2 block">Image</label>
                           <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-slate-700 px-3 py-2 text-xs font-semibold hover:bg-slate-600 transition">
                             <ImagePlus size={14} />
-                            Choose image from laptop
+                            Choose Image
                             <input
                               type="file"
                               accept="image/*"
                               className="hidden"
-                              onChange={(e) =>
+                              onChange={(e) => {
+                                const file = e.target.files?.[0] || null;
                                 setImageFiles((prev) => ({
                                   ...prev,
-                                  [futsal.futsal_id]: e.target.files?.[0] || null,
-                                }))
-                              }
+                                  [futsal.futsal_id]: file,
+                                }));
+                                if (file) uploadImage(futsal.futsal_id, file);
+                                e.target.value = "";
+                              }}
                             />
                           </label>
                           <p className="mt-2 text-xs t-text-muted">
-                            {imageFiles[futsal.futsal_id]?.name || "No image selected"}
+                            {uploadingImage[futsal.futsal_id]
+                              ? "Saving image..."
+                              : imageFiles[futsal.futsal_id]?.name || "No image selected"}
                           </p>
                           <div className="flex gap-2 mt-3">
-                            <button
-                              onClick={() => uploadImage(futsal.futsal_id)}
-                              disabled={!imageFiles[futsal.futsal_id]}
-                              className="bg-emerald-500 text-slate-900 px-3 py-2 rounded-lg text-xs font-semibold inline-flex items-center gap-1"
-                            >
-                              <ImagePlus size={14} />Upload
-                            </button>
                             {futsal.image_url && (
                               <button
                                 onClick={() => deleteImage(futsal.futsal_id)}
