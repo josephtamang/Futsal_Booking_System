@@ -66,6 +66,7 @@ router.get("/bookings", auth, admin, (req, res) => {
       b.booking_date,
       b.status,
       u.full_name,
+      u.profile_image,
       f.futsal_name,
       c.court_name,
       s.start_time,

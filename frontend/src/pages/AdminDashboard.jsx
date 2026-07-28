@@ -1,6 +1,17 @@
 import { useEffect, useState } from "react";
 import API from "../services/api";
 
+const API_ORIGIN = "http://localhost:5000";
+
+function getInitials(name) {
+  return (name || "U")
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
+
 function AdminDashboard() {
   const [bookings, setBookings] = useState([]);
   const [selectedDate, setSelectedDate] = useState("");
@@ -109,7 +120,22 @@ useEffect(() => {
             ) : (
               bookings.map((b) => (
                 <tr key={b.booking_id} className="border-t t-border">
-                  <td className="p-3 text-center">{b.full_name}</td>
+                  <td className="p-3">
+                    <div className="flex items-center justify-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden">
+                        {b.profile_image ? (
+                          <img
+                            src={`${API_ORIGIN}${b.profile_image}`}
+                            alt={b.full_name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          getInitials(b.full_name)
+                        )}
+                      </div>
+                      <span>{b.full_name}</span>
+                    </div>
+                  </td>
                   <td className="p-3 text-center">{b.futsal_name}</td>
                   <td className="p-3 text-center">{b.court_name}</td>
                   <td className="p-3 text-center">

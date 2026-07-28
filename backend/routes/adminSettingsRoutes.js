@@ -11,7 +11,7 @@ const admin = require("../middleware/adminMiddleware");
 // GET all users
 router.get("/users", auth, admin, (req, res) => {
   const sql = `
-    SELECT user_id, full_name, email, phone, role, created_at
+    SELECT user_id, full_name, email, phone, role, profile_image, created_at
     FROM users
     ORDER BY created_at DESC
   `;
@@ -187,6 +187,7 @@ router.get("/stats", auth, admin, (req, res) => {
       SELECT 
         b.booking_date, b.status,
         u.full_name,
+        u.profile_image,
         f.futsal_name,
         c.court_name
       FROM bookings b

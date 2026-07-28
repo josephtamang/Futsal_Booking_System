@@ -19,6 +19,16 @@ import {
   Mail,
 } from "lucide-react";
 
+const API_ORIGIN = "http://localhost:5000";
+
+const initials = (name) =>
+  (name || "U")
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
 // ─── tiny helpers ──────────────────────────────────────────────────────────
 const fmt = (d) =>
   d
@@ -310,13 +320,26 @@ function AdminSettings() {
                       <div className="space-y-3">
                         {stats.recentBookings?.map((b, i) => (
                           <div key={i} className="bg-slate-700/50 rounded-xl px-4 py-3">
-                            <div className="flex justify-between items-start">
-                              <div>
+                            <div className="flex justify-between items-start gap-3">
+                              <div className="flex items-start gap-3 min-w-0">
+                                <div className="w-9 h-9 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden">
+                                  {b.profile_image ? (
+                                    <img
+                                      src={`${API_ORIGIN}${b.profile_image}`}
+                                      alt={b.full_name}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    initials(b.full_name)
+                                  )}
+                                </div>
+                                <div className="min-w-0">
                                 <p className="font-medium text-sm">{b.full_name}</p>
                                 <p className="t-text-muted text-xs">
                                   {b.futsal_name} — {b.court_name}
                                 </p>
                               </div>
+                                </div>
                               <div className="text-right">
                                 <p className="text-xs t-text-muted">{fmt(b.booking_date)}</p>
                                 <span
@@ -388,13 +411,16 @@ function AdminSettings() {
                         <tr key={u.user_id} className="border-t t-border hover:bg-slate-700/30 transition">
                           <td className="p-4">
                             <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs font-bold shrink-0">
-                                {(u.full_name || "U")
-                                  .split(" ")
-                                  .map((n) => n[0])
-                                  .join("")
-                                  .toUpperCase()
-                                  .slice(0, 2)}
+                              <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden">
+                                {u.profile_image ? (
+                                  <img
+                                    src={`${API_ORIGIN}${u.profile_image}`}
+                                    alt={u.full_name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  initials(u.full_name)
+                                )}
                               </div>
                               <span className="font-medium">{u.full_name || "Unnamed User"}</span>
                             </div>
@@ -572,8 +598,16 @@ function AdminSettings() {
                       /* ── View row ── */
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="flex items-start gap-4">
-                          <div className="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0">
-                            <Building2 size={20} />
+                          <div className="w-16 h-16 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0 overflow-hidden">
+                            {f.image_url ? (
+                              <img
+                                src={`${API_ORIGIN}${f.image_url}`}
+                                alt={f.futsal_name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <Building2 size={20} />
+                            )}
                           </div>
                           <div>
                             <h3 className="font-semibold text-lg">{f.futsal_name}</h3>
