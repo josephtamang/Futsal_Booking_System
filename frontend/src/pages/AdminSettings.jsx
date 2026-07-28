@@ -122,11 +122,16 @@ function AdminSettings() {
       .finally(() => setTimeout(() => setUserMsg({ text: "", ok: true }), 3000));
   };
 
-  const filteredUsers = users.filter(
-    (u) =>
-      u.full_name.toLowerCase().includes(userSearch.toLowerCase()) ||
-      u.email.toLowerCase().includes(userSearch.toLowerCase())
-  );
+  const filteredUsers = users.filter((u) => {
+    const name = u.full_name || "";
+    const email = u.email || "";
+    const search = userSearch.toLowerCase();
+
+    return (
+      name.toLowerCase().includes(search) ||
+      email.toLowerCase().includes(search)
+    );
+  });
 
   // ── FUTSALS ─────────────────────────────────────────────────────────────
   const loadFutsals = () => {
@@ -363,17 +368,17 @@ function AdminSettings() {
                           <td className="p-4">
                             <div className="flex items-center gap-3">
                               <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs font-bold shrink-0">
-                                {u.full_name
+                                {(u.full_name || "U")
                                   .split(" ")
                                   .map((n) => n[0])
                                   .join("")
                                   .toUpperCase()
                                   .slice(0, 2)}
                               </div>
-                              <span className="font-medium">{u.full_name}</span>
+                              <span className="font-medium">{u.full_name || "Unnamed User"}</span>
                             </div>
                           </td>
-                          <td className="p-4 t-text-muted hidden md:table-cell">{u.email}</td>
+                          <td className="p-4 t-text-muted hidden md:table-cell">{u.email || "—"}</td>
                           <td className="p-4 t-text-muted hidden md:table-cell">{u.phone || "—"}</td>
                           <td className="p-4">
                             <span
