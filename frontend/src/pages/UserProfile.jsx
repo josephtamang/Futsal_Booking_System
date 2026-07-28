@@ -11,7 +11,11 @@ import {
   XCircle,
   Eye,
   EyeOff,
+  ImagePlus,
+  Trash2,
 } from "lucide-react";
+
+const API_ORIGIN = "http://localhost:5000";
 
 function UserProfile() {
   const [profile, setProfile] = useState(null);
@@ -31,6 +35,7 @@ function UserProfile() {
   const [pwMsg, setPwMsg] = useState({ text: "", ok: true });
   const [activeTab, setActiveTab] = useState("profile");
   const [saving, setSaving] = useState(false);
+  const [imageSaving, setImageSaving] = useState(false);
 
   // ── load profile ────────────────────────────────────────────────
   const loadProfile = () => {
@@ -45,6 +50,49 @@ function UserProfile() {
   useEffect(() => {
     loadProfile();
   }, []);
+
+  const handleUploadImage = async (file) => {
+    if (!file) return;
+
+    const data = new FormData();
+    data.append("image", file);
+    setImageSaving(true);
+
+    try {
+      const res = await API.put("/profile/image", data, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      setProfileMsg({ text: res.data.message, ok: true });
+      loadProfile();
+    } catch (err) {
+      setProfileMsg({
+        text: err.response?.data?.message || "Image upload failed",
+        ok: false,
+      });
+    } finally {
+      setImageSaving(false);
+      setTimeout(() => setProfileMsg({ text: "", ok: true }), 3000);
+    }
+  };
+
+  const handleDeleteImage = async () => {
+    if (!window.confirm("Delete your profile image?")) return;
+
+    setImageSaving(true);
+    try {
+      const res = await API.delete("/profile/image");
+      setProfileMsg({ text: res.data.message, ok: true });
+      loadProfile();
+    } catch (err) {
+      setProfileMsg({
+        text: err.response?.data?.message || "Image delete failed",
+        ok: false,
+      });
+    } finally {
+      setImageSaving(false);
+      setTimeout(() => setProfileMsg({ text: "", ok: true }), 3000);
+    }
+  };
 
   // ── save profile ─────────────────────────────────────────────────
   const handleSaveProfile = async () => {
@@ -139,10 +187,18 @@ function UserProfile() {
       <div className="max-w-3xl mx-auto">
 
         {/* ── Header card ── */}
-        <div className="t-card rounded-2xl p-6 mb-6 flex items-center gap-5">
-          {/* Avatar circle with initials */}
-          <div className="w-16 h-16 rounded-full bg-emerald-500 flex items-center justify-center text-slate-900 text-2xl font-bold shrink-0">
-            {getInitials(profile.full_name)}
+        <div className="t-card rounded-2xl p-6 mb-6 flex flex-col sm:flex-row sm:items-center gap-5">
+          {/* Avatar circle with image or initials */}
+          <div className="w-20 h-20 rounded-full bg-emerald-500 flex items-center justify-center text-slate-900 text-2xl font-bold shrink-0 overflow-hidden">
+            {profile.profile_image ? (
+              <img
+                src={`${API_ORIGIN}${profile.profile_image}`}
+                alt={profile.full_name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              getInitials(profile.full_name)
+            )}
           </div>
 
           <div className="flex-1 min-w-0">
@@ -161,6 +217,37 @@ function UserProfile() {
                 <span className="inline-flex items-center gap-1"><User size={12} />User</span>
               )}
             </span>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <input
+                id="profile-image-input"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleUploadImage(file);
+                  e.target.value = "";
+                }}
+              />
+              <label
+                htmlFor="profile-image-input"
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer inline-flex items-center gap-1.5 transition"
+                style={{ background: "var(--accent)", color: "#0f172a" }}
+              >
+                <ImagePlus size={14} />
+                {imageSaving ? "Saving..." : "Choose Image"}
+              </label>
+              {profile.profile_image && (
+                <button
+                  onClick={handleDeleteImage}
+                  disabled={imageSaving}
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-500/15 text-red-400 hover:bg-red-500/25 inline-flex items-center gap-1.5 disabled:opacity-60"
+                >
+                  <Trash2 size={14} />
+                  Delete Image
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="text-right text-xs text-slate-500 shrink-0">
