@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import API from "../services/api";
 
 
 function AdminCourts() {
+  const [searchParams] = useSearchParams();
   const [futsals, setFutsals] = useState([]);
   const [courts, setCourts] = useState([]);
   const [form, setForm] = useState({
@@ -13,6 +15,12 @@ function AdminCourts() {
   });
   const [imageFile, setImageFile] = useState(null);
   const [imageUploading, setImageUploading] = useState(false);
+  const [editingCourt, setEditingCourt] = useState(null);
+  const [courtEditForm, setCourtEditForm] = useState({
+    court_name: "",
+    court_type: "",
+    price_per_hour: "",
+  });
   const selectedFutsal = futsals.find(
     (f) => String(f.futsal_id) === String(form.futsal_id)
   );
@@ -22,9 +30,15 @@ function AdminCourts() {
   ========================= */
   useEffect(() => {
     API.get("/futsals")
-      .then((res) => setFutsals(res.data))
+      .then((res) => {
+        setFutsals(res.data);
+        const futsalId = searchParams.get("futsal_id");
+        if (futsalId) {
+          setForm((prev) => ({ ...prev, futsal_id: futsalId }));
+        }
+      })
       .catch(() => alert("Failed to load futsals"));
-  }, []);
+  }, [searchParams]);
 
   /* =========================
      LOAD COURTS BY FUTSAL
@@ -77,6 +91,49 @@ function AdminCourts() {
     API.put(`/admin/courts/${court_id}/enable`)
       .then(() => refreshCourts())
       .catch(() => alert("Failed to enable court"));
+  };
+
+  const startEditCourt = (court) => {
+    setEditingCourt(court.court_id);
+    setCourtEditForm({
+      court_name: court.court_name || "",
+      court_type: court.court_type || "",
+      price_per_hour: court.price_per_hour || "",
+    });
+  };
+
+  const cancelEditCourt = () => {
+    setEditingCourt(null);
+    setCourtEditForm({ court_name: "", court_type: "", price_per_hour: "" });
+  };
+
+  const saveCourt = (court_id) => {
+    if (!courtEditForm.court_name || !courtEditForm.price_per_hour) {
+      return alert("Court name and price are required");
+    }
+
+    API.put(`/admin/courts/${court_id}`, courtEditForm)
+      .then((res) => {
+        alert(res.data.message);
+        cancelEditCourt();
+        refreshCourts();
+      })
+      .catch((err) =>
+        alert(err.response?.data?.message || "Failed to update court")
+      );
+  };
+
+  const deleteCourt = (court_id, court_name) => {
+    if (!window.confirm(`Delete ${court_name}? This will also remove its slots.`)) return;
+
+    API.delete(`/admin/courts/${court_id}`)
+      .then((res) => {
+        alert(res.data.message);
+        refreshCourts();
+      })
+      .catch((err) =>
+        alert(err.response?.data?.message || "Failed to delete court")
+      );
   };
 
   const refreshFutsals = () => {
@@ -160,49 +217,109 @@ function AdminCourts() {
             {courts.map((c) => (
               <div
                 key={c.court_id}
-                className="t-card rounded-2xl p-6 flex justify-between items-center"
+                className="t-card rounded-2xl p-6"
               >
-                <div>
-                  <h3 className="text-lg font-semibold">
-                    {c.court_name}
-                  </h3>
-                  <p className="t-text-muted text-sm">
-                    {c.court_type || "Court"}
-                  </p>
-                  <p className="mt-1 text-sm">
-                    Rs. {c.price_per_hour} / hour
-                  </p>
-                </div>
-
-                <div className="text-right">
-                  <span
-                    className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                      c.is_active
-                        ? "bg-emerald-500/20 text-emerald-400"
-                        : "bg-red-500/20 text-red-400"
-                    }`}
-                  >
-                    {c.is_active ? "Active" : "Disabled"}
-                  </span>
-
-                  <div className="mt-3">
-                    {c.is_active ? (
+                {editingCourt === c.court_id ? (
+                  <div>
+                    <div className="grid gap-3">
+                      <input
+                        value={courtEditForm.court_name}
+                        onChange={(e) =>
+                          setCourtEditForm({ ...courtEditForm, court_name: e.target.value })
+                        }
+                        className="bg-slate-900 border t-border p-3 rounded-xl"
+                        placeholder="Court Name"
+                      />
+                      <input
+                        value={courtEditForm.court_type}
+                        onChange={(e) =>
+                          setCourtEditForm({ ...courtEditForm, court_type: e.target.value })
+                        }
+                        className="bg-slate-900 border t-border p-3 rounded-xl"
+                        placeholder="Court Type"
+                      />
+                      <input
+                        type="number"
+                        value={courtEditForm.price_per_hour}
+                        onChange={(e) =>
+                          setCourtEditForm({ ...courtEditForm, price_per_hour: e.target.value })
+                        }
+                        className="bg-slate-900 border t-border p-3 rounded-xl"
+                        placeholder="Price per hour"
+                      />
+                    </div>
+                    <div className="flex gap-3 mt-4">
                       <button
-                        onClick={() => disableCourt(c.court_id)}
-                        className="text-red-400 hover:underline"
+                        onClick={() => saveCourt(c.court_id)}
+                        className="bg-emerald-500 text-slate-900 px-4 py-2 rounded-xl font-semibold hover:bg-emerald-400 transition"
                       >
-                        Disable
+                        Save
                       </button>
-                    ) : (
                       <button
-                        onClick={() => enableCourt(c.court_id)}
-                        className="text-emerald-400 hover:underline"
+                        onClick={cancelEditCourt}
+                        className="bg-slate-700 px-4 py-2 rounded-xl hover:bg-slate-600 transition"
                       >
-                        Enable
+                        Cancel
                       </button>
-                    )}
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="flex justify-between items-center gap-5">
+                    <div>
+                      <h3 className="text-lg font-semibold">
+                        {c.court_name}
+                      </h3>
+                      <p className="t-text-muted text-sm">
+                        {c.court_type || "Court"}
+                      </p>
+                      <p className="mt-1 text-sm">
+                        Rs. {c.price_per_hour} / hour
+                      </p>
+                    </div>
+
+                    <div className="text-right">
+                      <span
+                        className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                          c.is_active
+                            ? "bg-emerald-500/20 text-emerald-400"
+                            : "bg-red-500/20 text-red-400"
+                        }`}
+                      >
+                        {c.is_active ? "Active" : "Disabled"}
+                      </span>
+
+                      <div className="mt-3 flex flex-col gap-2">
+                        <button
+                          onClick={() => startEditCourt(c)}
+                          className="text-blue-300 hover:underline"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => deleteCourt(c.court_id, c.court_name)}
+                          className="text-red-400 hover:underline"
+                        >
+                          Delete
+                        </button>
+                        {c.is_active ? (
+                          <button
+                            onClick={() => disableCourt(c.court_id)}
+                            className="text-red-400 hover:underline"
+                          >
+                            Disable
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => enableCourt(c.court_id)}
+                            className="text-emerald-400 hover:underline"
+                          >
+                            Enable
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>

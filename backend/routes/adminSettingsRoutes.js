@@ -67,6 +67,7 @@ router.get("/futsals", auth, admin, (req, res) => {
       f.futsal_id,
       f.futsal_name,
       f.address,
+      f.image_url,
       f.opening_time,
       f.closing_time,
       COUNT(c.court_id) AS court_count
@@ -106,11 +107,67 @@ router.put("/futsals/:futsal_id", auth, admin, (req, res) => {
 // DELETE futsal
 router.delete("/futsals/:futsal_id", auth, admin, (req, res) => {
   const { futsal_id } = req.params;
-  db.query("DELETE FROM futsals WHERE futsal_id = ?", [futsal_id], (err, result) => {
-    if (err) return res.status(500).json({ message: "Failed to delete futsal" });
-    if (result.affectedRows === 0)
-      return res.status(404).json({ message: "Futsal not found" });
-    res.json({ message: "Futsal deleted successfully" });
+
+  const confirmedSql = `
+    SELECT COUNT(*) AS count
+    FROM bookings b
+    JOIN courts c ON b.court_id = c.court_id
+    WHERE c.futsal_id = ?
+      AND b.status = 'confirmed'
+  `;
+
+  db.query(confirmedSql, [futsal_id], (bookingErr, bookingRows) => {
+    if (bookingErr) {
+      return res.status(500).json({ message: "Failed to check futsal bookings" });
+    }
+
+    if (bookingRows[0].count > 0) {
+      return res.status(400).json({
+        message: "Cannot delete futsal with confirmed bookings",
+      });
+    }
+
+    db.query(
+      "SELECT court_id FROM courts WHERE futsal_id = ?",
+      [futsal_id],
+      (courtErr, courts) => {
+        if (courtErr) {
+          return res.status(500).json({ message: "Failed to load futsal courts" });
+        }
+
+        const courtIds = courts.map((court) => court.court_id);
+        const finishDelete = () => {
+          db.query("DELETE FROM futsals WHERE futsal_id = ?", [futsal_id], (err, result) => {
+            if (err) return res.status(500).json({ message: "Failed to delete futsal" });
+            if (result.affectedRows === 0)
+              return res.status(404).json({ message: "Futsal not found" });
+            res.json({ message: "Futsal deleted successfully" });
+          });
+        };
+
+        if (courtIds.length === 0) return finishDelete();
+
+        db.query("UPDATE bookings SET slot_id = NULL, court_id = NULL WHERE court_id IN (?)", [courtIds], (clearErr) => {
+          if (clearErr) {
+            return res.status(500).json({ message: "Failed to clear futsal bookings" });
+          }
+
+          db.query("DELETE FROM time_slots WHERE court_id IN (?)", [courtIds], (slotErr) => {
+            if (slotErr) {
+              return res.status(500).json({ message: "Failed to delete futsal slots" });
+            }
+
+            db.query("DELETE FROM courts WHERE futsal_id = ?", [futsal_id], (deleteCourtsErr) => {
+              if (deleteCourtsErr) {
+                return res.status(500).json({ message: "Failed to delete futsal courts" });
+              }
+
+              finishDelete();
+            });
+          });
+        });
+      }
+    );
   });
 });
 

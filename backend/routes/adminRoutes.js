@@ -303,6 +303,76 @@ router.put("/courts/:court_id/enable", auth, admin, (req, res) => {
   });
 });
 
+// Update court details
+router.put("/courts/:court_id", auth, admin, (req, res) => {
+  const { court_id } = req.params;
+  const { court_name, court_type, price_per_hour } = req.body;
+
+  if (!court_name || !price_per_hour) {
+    return res.status(400).json({ message: "Court name and price are required" });
+  }
+
+  const sql = `
+    UPDATE courts
+    SET court_name = ?, court_type = ?, price_per_hour = ?
+    WHERE court_id = ?
+  `;
+
+  db.query(sql, [court_name, court_type || null, price_per_hour, court_id], (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ message: "Failed to update court" });
+    }
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Court not found" });
+    }
+    res.json({ message: "Court updated successfully" });
+  });
+});
+
+// Delete court and its slots
+router.delete("/courts/:court_id", auth, admin, (req, res) => {
+  const { court_id } = req.params;
+
+  db.query(
+    "SELECT COUNT(*) AS count FROM bookings WHERE court_id = ? AND status = 'confirmed'",
+    [court_id],
+    (bookingErr, bookingRows) => {
+      if (bookingErr) {
+        return res.status(500).json({ message: "Failed to check court bookings" });
+      }
+
+      if (bookingRows[0].count > 0) {
+        return res.status(400).json({
+          message: "Cannot delete court with confirmed bookings",
+        });
+      }
+
+      db.query("UPDATE bookings SET slot_id = NULL WHERE court_id = ?", [court_id], (clearErr) => {
+        if (clearErr) {
+          return res.status(500).json({ message: "Failed to clear court bookings" });
+        }
+
+        db.query("DELETE FROM time_slots WHERE court_id = ?", [court_id], (slotErr) => {
+          if (slotErr) {
+            return res.status(500).json({ message: "Failed to delete court slots" });
+          }
+
+          db.query("DELETE FROM courts WHERE court_id = ?", [court_id], (courtErr, result) => {
+            if (courtErr) {
+              return res.status(500).json({ message: "Failed to delete court" });
+            }
+            if (result.affectedRows === 0) {
+              return res.status(404).json({ message: "Court not found" });
+            }
+            res.json({ message: "Court deleted successfully" });
+          });
+        });
+      });
+    }
+  );
+});
+
 
 
 

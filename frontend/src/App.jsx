@@ -8,6 +8,7 @@ import FutsalExplorer from "./pages/FutsalExplorer";
 import MyBookings from "./pages/MyBookings";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminCourts from "./pages/AdminCourts";
+import AdminFutsals from "./pages/AdminFutsals";
 import AdminSlots from "./pages/AdminSlots";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
@@ -29,6 +30,7 @@ function App() {
         <Route path="/recommendations" element={<Recommendations />} />
         <Route path="/futsal/:futsal_id" element={<FutsalDetail />} />
         <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/admin/futsals" element={<AdminFutsals />} />
         <Route path="/admin/courts" element={<AdminCourts />} />
         <Route path="/admin/slots" element={<AdminSlots />} />
         <Route path="/admin/settings" element={<AdminSettings />} />

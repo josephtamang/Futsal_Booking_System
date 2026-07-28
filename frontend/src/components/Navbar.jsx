@@ -70,6 +70,7 @@ function Navbar() {
           ) : isAdmin ? (
             <>
               <Link to="/admin" className={linkCls}>Dashboard</Link>
+              <Link to="/admin/futsals" className={linkCls}>Futsals</Link>
               <Link to="/admin/courts" className={linkCls}>Courts</Link>
               <Link to="/admin/slots" className={linkCls}>Slots</Link>
               <Link to="/admin/settings"
@@ -108,6 +109,7 @@ function Navbar() {
           ) : isAdmin ? (
             <>
               <Link onClick={close} to="/admin" className={linkCls}>Dashboard</Link>
+              <Link onClick={close} to="/admin/futsals" className={linkCls}>Futsals</Link>
               <Link onClick={close} to="/admin/courts" className={linkCls}>Courts</Link>
               <Link onClick={close} to="/admin/slots" className={linkCls}>Slots</Link>
               <Link onClick={close} to="/admin/settings" className={`${linkCls} inline-flex items-center gap-1`}><SettingsIcon size={12} />Settings</Link>
