@@ -15,6 +15,26 @@ const THUMB_IDS = [
 
 const API_ORIGIN = "http://localhost:5000";
 
+function timeToMinutes(time) {
+  const [hours, minutes] = String(time).split(":").map(Number);
+  return hours * 60 + minutes;
+}
+
+function getCurrentMinutes() {
+  const date = new Date();
+  return date.getHours() * 60 + date.getMinutes();
+}
+
+function isOpenNow(futsal) {
+  if (!futsal.opening_time || !futsal.closing_time) return false;
+
+  const current = getCurrentMinutes();
+  return (
+    current >= timeToMinutes(futsal.opening_time) &&
+    current < timeToMinutes(futsal.closing_time)
+  );
+}
+
 function FutsalExplorer() {
   const [futsals, setFutsals] = useState([]);
   const [search, setSearch]   = useState("");
@@ -88,7 +108,10 @@ function FutsalExplorer() {
           </div>
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filtered.map((f, i) => (
+            {filtered.map((f, i) => {
+              const openNow = isOpenNow(f);
+
+              return (
               <motion.div
                 key={f.futsal_id}
                 initial={{ opacity: 0, y: 24 }}
@@ -110,6 +133,17 @@ function FutsalExplorer() {
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/55 to-transparent" />
+                  <span
+                    className="absolute top-3 right-3 text-xs px-3 py-1 rounded-full font-semibold"
+                    style={{
+                      background: openNow
+                        ? "rgba(16, 185, 129, 0.9)"
+                        : "rgba(244, 63, 94, 0.9)",
+                      color: "#fff",
+                    }}
+                  >
+                    {openNow ? "Active" : "Inactive"}
+                  </span>
                   <div className="absolute bottom-3 left-4 right-4">
                     <h3 className="font-bold text-white text-base leading-tight truncate">{f.futsal_name}</h3>
                   </div>
@@ -138,7 +172,8 @@ function FutsalExplorer() {
                   </div>
                 </div>
               </motion.div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

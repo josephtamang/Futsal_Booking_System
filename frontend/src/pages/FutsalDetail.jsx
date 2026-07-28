@@ -205,6 +205,16 @@ function getLocalDate() {
   return `${year}-${month}-${day}`;
 }
 
+function getCurrentMinutes() {
+  const date = new Date();
+  return date.getHours() * 60 + date.getMinutes();
+}
+
+function timeToMinutes(time) {
+  const [hours, minutes] = time.split(":").map(Number);
+  return hours * 60 + minutes;
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 function FutsalDetail() {
   const { futsal_id } = useParams();
@@ -266,6 +276,14 @@ function FutsalDetail() {
   const bookSlot = async (slot) => {
     if (selectedDate < getLocalDate()) {
       setBookMsg({ text: "Please select today or a future date", ok: false });
+      return;
+    }
+
+    if (
+      selectedDate === getLocalDate() &&
+      timeToMinutes(slot.start_time) <= getCurrentMinutes()
+    ) {
+      setBookMsg({ text: "This slot is no longer available today", ok: false });
       return;
     }
 
@@ -479,18 +497,24 @@ function FutsalDetail() {
                   <div className="grid grid-cols-2 gap-2">
                     {slots.map((s) => {
                       const isBooked = bookedSlots.includes(s.slot_id);
+                      const isPastToday =
+                        selectedDate === today &&
+                        timeToMinutes(s.start_time) <= getCurrentMinutes();
                       return (
                         <button
                           key={s.slot_id}
-                          disabled={isBooked || booking}
-                          onClick={() => !isBooked && bookSlot(s)}
-                          className={`slot-btn ${isBooked ? "booked" : ""}`}
+                          disabled={isBooked || isPastToday || booking}
+                          onClick={() => !isBooked && !isPastToday && bookSlot(s)}
+                          className={`slot-btn ${isBooked || isPastToday ? "booked" : ""}`}
                         >
                           {fmtTime(s.start_time)}<br />
-                          <span style={{ color: isBooked ? "inherit" : "var(--text-secondary)" }}>
+                          <span style={{ color: isBooked || isPastToday ? "inherit" : "var(--text-secondary)" }}>
                             – {fmtTime(s.end_time)}
                           </span>
                           {isBooked && <span className="block text-xs mt-0.5">Booked</span>}
+                          {!isBooked && isPastToday && (
+                            <span className="block text-xs mt-0.5">Inactive</span>
+                          )}
                         </button>
                       );
                     })}

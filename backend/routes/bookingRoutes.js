@@ -3,13 +3,33 @@ const router = express.Router();
 const db = require("../db");
 const auth = require("../middleware/authMiddleware");
 
-// Create booking (date-based safe booking)
+function todayInKathmandu() {
+  return new Date().toLocaleDateString("en-CA", {
+    timeZone: "Asia/Kathmandu",
+  });
+}
+
+function currentMinutesInKathmandu() {
+  const currentTime = new Date().toLocaleTimeString("en-GB", {
+    timeZone: "Asia/Kathmandu",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  const [hour, minute] = currentTime.split(":").map(Number);
+  return hour * 60 + minute;
+}
+
+function timeToMinutes(time) {
+  const [hour, minute] = String(time).split(":").map(Number);
+  return hour * 60 + minute;
+}
+
+// Create booking (date and time safe booking)
 router.post("/", auth, (req, res) => {
   const { court_id, slot_id, booking_date } = req.body;
   const user_id = req.user.user_id;
-  const today = new Date().toLocaleDateString("en-CA", {
-    timeZone: "Asia/Kathmandu",
-  });
+  const today = todayInKathmandu();
 
   if (!booking_date || booking_date < today) {
     return res
@@ -17,24 +37,44 @@ router.post("/", auth, (req, res) => {
       .json({ message: "Please select today or a future date" });
   }
 
-  // Check if slot already booked for that date
-  const checkSql = `
-    SELECT booking_id
-    FROM bookings
-    WHERE court_id = ?
-      AND slot_id = ?
-      AND booking_date = ?
-      AND status = 'confirmed'
-  `;
+  const slotSql =
+    `SELECT start_time
+     FROM time_slots
+     WHERE slot_id = ?
+       AND court_id = ?
+       AND is_available = 1
+       AND is_active = 1`;
 
-  db.query(
-    checkSql,
-    [court_id, slot_id, booking_date],
-    (err, existing) => {
+  db.query(slotSql, [slot_id, court_id], (slotErr, slotRows) => {
+    if (slotErr || slotRows.length === 0) {
+      return res.status(400).json({ message: "Invalid slot selected" });
+    }
+
+    if (
+      booking_date === today &&
+      timeToMinutes(slotRows[0].start_time) <= currentMinutesInKathmandu()
+    ) {
+      return res
+        .status(400)
+        .json({ message: "This slot is no longer available today" });
+    }
+
+    const checkSql = `
+      SELECT booking_id
+      FROM bookings
+      WHERE court_id = ?
+        AND slot_id = ?
+        AND booking_date = ?
+        AND status = 'confirmed'
+    `;
+
+    db.query(checkSql, [court_id, slot_id, booking_date], (err, existing) => {
+      if (err) {
+        return res.status(500).json({ message: "Booking failed" });
+      }
+
       if (existing.length > 0) {
-        return res
-          .status(400)
-          .json({ message: "Slot already booked" });
+        return res.status(400).json({ message: "Slot already booked" });
       }
 
       const insertSql = `
@@ -42,30 +82,23 @@ router.post("/", auth, (req, res) => {
         VALUES (?, ?, ?, ?)
       `;
 
-      db.query(
-        insertSql,
-        [user_id, court_id, slot_id, booking_date],
-        (err) => {
-          if (err) {
-            return res.status(500).json({ message: "Booking failed" });
-          }
-
-          res.json({ message: "Booking confirmed 🎉" });
+      db.query(insertSql, [user_id, court_id, slot_id, booking_date], (insertErr) => {
+        if (insertErr) {
+          return res.status(500).json({ message: "Booking failed" });
         }
-      );
-    }
-  );
+
+        res.json({ message: "Booking confirmed" });
+      });
+    });
+  });
 });
-
-
-
 
 // Get booking history for logged-in user
 router.get("/my-bookings", auth, (req, res) => {
   const user_id = req.user.user_id;
 
   const sql = `
-    SELECT 
+    SELECT
       b.booking_id,
       b.booking_date,
       b.status,
@@ -91,15 +124,11 @@ router.get("/my-bookings", auth, (req, res) => {
   });
 });
 
-
-
-
 // User cancels own booking
 router.put("/cancel/:booking_id", auth, (req, res) => {
   const booking_id = req.params.booking_id;
   const user_id = req.user.user_id;
 
-  // Ensure booking belongs to this user
   const checkSql = `
     SELECT booking_id
     FROM bookings
@@ -124,6 +153,5 @@ router.put("/cancel/:booking_id", auth, (req, res) => {
     });
   });
 });
-
 
 module.exports = router;
