@@ -91,13 +91,36 @@ router.post("/courts", auth, admin, (req, res) => {
 router.post("/slots", auth, admin, (req, res) => {
   const { court_id, start_time, end_time } = req.body;
 
+  const startHour = Number(String(start_time).split(":")[0]);
+  const endHour = Number(String(end_time).split(":")[0]);
+
+  if (!court_id || !start_time || !end_time) {
+    return res.status(400).json({ message: "Court, start time, and end time are required" });
+  }
+
+  if (startHour < 7 || endHour > 20 || endHour - startHour !== 1) {
+    return res.status(400).json({
+      message: "Slots must be one hour between 07:00 and 20:00",
+    });
+  }
+
   const sql = `
-    INSERT INTO time_slots (court_id, start_time, end_time)
-    VALUES (?, ?, ?)
+    INSERT INTO time_slots (court_id, start_time, end_time, is_available, is_active)
+    SELECT ?, ?, ?, 1, 1
+    WHERE NOT EXISTS (
+      SELECT 1
+      FROM time_slots
+      WHERE court_id = ?
+        AND start_time = ?
+        AND end_time = ?
+    )
   `;
 
-  db.query(sql, [court_id, start_time, end_time], (err) => {
+  db.query(sql, [court_id, start_time, end_time, court_id, start_time, end_time], (err, result) => {
     if (err) return res.status(500).json({ message: "Failed to add slot" });
+    if (result.affectedRows === 0) {
+      return res.status(409).json({ message: "This time slot already exists" });
+    }
     res.json({ message: "Time slot added successfully" });
   });
 });
@@ -175,7 +198,8 @@ router.put("/slots/:slot_id/disable", auth, admin, (req, res) => {
 
   const sql = `
     UPDATE time_slots
-    SET is_active = 0
+    SET is_active = 0,
+        is_available = 0
     WHERE slot_id = ?
   `;
 
@@ -195,7 +219,8 @@ router.put("/slots/:slot_id/enable", auth, admin, (req, res) => {
 
   const sql = `
     UPDATE time_slots
-    SET is_active = 1
+    SET is_active = 1,
+        is_available = 1
     WHERE slot_id = ?
   `;
 
@@ -239,7 +264,7 @@ router.get("/courts/:futsal_id", auth, admin, (req, res) => {
 // ADMIN: get all slots of a court
 router.get("/slots/court/:court_id", auth, admin, (req, res) => {
   const sql = `
-    SELECT *
+    SELECT slot_id, court_id, start_time, end_time, is_available, is_active
     FROM time_slots
     WHERE court_id = ?
     ORDER BY start_time

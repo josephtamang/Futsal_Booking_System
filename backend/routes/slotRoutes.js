@@ -14,6 +14,7 @@ router.get("/:court_id", (req, res) => {
     FROM time_slots
     WHERE court_id = ?
       AND is_available = 1
+      AND is_active = 1
     ORDER BY start_time
   `;
 
