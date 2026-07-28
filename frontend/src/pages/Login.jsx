@@ -19,7 +19,7 @@ function Login() {
     try {
       const res = await API.post("/auth/login", { email, password });
       login(res.data.token);
-      navigate("/explore");
+      navigate(res.data.user?.role === "admin" ? "/admin/futsals" : "/explore");
     } catch {
       setMessage("Invalid email or password");
     }

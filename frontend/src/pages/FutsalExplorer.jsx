@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import API from "../services/api";
+import { useAuth } from "../context/AuthContext";
 import { Search, Building2, MapPin, Clock, ArrowRight } from "lucide-react";
 
 const THUMB_IDS = [
@@ -35,22 +36,38 @@ function isOpenNow(futsal) {
   );
 }
 
+function getRole(token) {
+  try {
+    return JSON.parse(atob(token.split(".")[1])).role || "user";
+  } catch {
+    return "user";
+  }
+}
+
 function FutsalExplorer() {
+  const { token } = useAuth();
   const [futsals, setFutsals] = useState([]);
   const [search, setSearch]   = useState("");
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const isAdmin = token && getRole(token) === "admin";
 
   useEffect(() => {
+    if (isAdmin) return;
+
     API.get("/futsals")
       .then((res) => setFutsals(res.data))
       .finally(() => setLoading(false));
-  }, []);
+  }, [isAdmin]);
 
   const filtered = futsals.filter((f) =>
     f.futsal_name.toLowerCase().includes(search.toLowerCase()) ||
     (f.address || "").toLowerCase().includes(search.toLowerCase())
   );
+
+  if (isAdmin) {
+    return <Navigate to="/admin/futsals" replace />;
+  }
 
   return (
     <div className="t-bg-base min-h-screen t-text pt-28 pb-16 px-6 md:px-12 lg:px-20">
